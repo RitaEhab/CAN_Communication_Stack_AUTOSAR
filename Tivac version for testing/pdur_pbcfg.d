@@ -1,0 +1,15 @@
+.\pdur_pbcfg.o: PduR_PbCfg.c
+.\pdur_pbcfg.o: PduR.h
+.\pdur_pbcfg.o: Std_Types.h
+.\pdur_pbcfg.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+.\pdur_pbcfg.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+.\pdur_pbcfg.o: PduR_Cfg.h
+.\pdur_pbcfg.o: PduR_PbCfg.h
+.\pdur_pbcfg.o: Std_Types.h
+.\pdur_pbcfg.o: PduR.h
+.\pdur_pbcfg.o: PduR_Types.h
+.\pdur_pbcfg.o: ComStack_Types.h
+.\pdur_pbcfg.o: Std_Types.h
+.\pdur_pbcfg.o: PduR_PbCfg.h
+.\pdur_pbcfg.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
+.\pdur_pbcfg.o: Std_Types.h
