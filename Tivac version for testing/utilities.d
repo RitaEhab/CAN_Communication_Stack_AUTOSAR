@@ -1,0 +1,16 @@
+.\utilities.o: utilities.c
+.\utilities.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
+.\utilities.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+.\utilities.o: C:/Keil/EE319Kware/inc/hw_can.h
+.\utilities.o: C:/Keil/EE319Kware/inc/hw_ints.h
+.\utilities.o: C:/Keil/EE319Kware/inc/hw_memmap.h
+.\utilities.o: C:/Keil/EE319Kware/driverlib/can.h
+.\utilities.o: C:/Keil/EE319Kware/driverlib/gpio.h
+.\utilities.o: C:/Keil/EE319Kware/driverlib/interrupt.h
+.\utilities.o: C:/Keil/EE319Kware/driverlib/pin_map.h
+.\utilities.o: C:/Keil/EE319Kware/driverlib/sysctl.h
+.\utilities.o: uart.h
+.\utilities.o: C:/Keil/EE319Kware/inc/hw_types.h
+.\utilities.o: C:/Keil/EE319Kware/driverlib/debug.h
+.\utilities.o: C:/Keil/EE319Kware/driverlib/rom.h
+.\utilities.o: utilities.h
