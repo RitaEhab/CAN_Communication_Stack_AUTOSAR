@@ -1,0 +1,6 @@
+#ifndef PDUR_COM_H_INCLUDED
+#define PDUR_COM_H_INCLUDED
+
+/* EMPTY FILE */
+
+#endif // PDUR_COM_H_INCLUDED
