@@ -1,212 +1,193 @@
-//Can driver includes
 #include "Can.h"
-
+#include "Common_Macros.h"
 #include "CanIf_Cbk.h"
 
-#include "Can_PBcfg.h"
+STATIC const Can_ConfigType* Can_ConfigStructPtr = NULL_PTR;
+STATIC Can_StateType CAN_STATE = CAN_UNINIT;
+STATIC Can_ControllerStateType CAN_CONTROLLER_STATE = CAN_CS_UNINIT;
+STATIC uint8 mutex =0;
 
-#include <stdbool.h>
-
-#include "C:/Keil/EE319Kware/inc/hw_can.h"
-#include "C:/Keil/EE319Kware/inc/hw_ints.h"
-#include "C:/Keil/EE319Kware/inc/hw_memmap.h"
-#include "Can.h"
-#include "C:/Keil/EE319Kware/driverlib/gpio.h"
-#include "C:/Keil/EE319Kware/driverlib/interrupt.h"
-#include "C:/Keil/EE319Kware/driverlib/pin_map.h"
-#include "C:/Keil/EE319Kware/driverlib/sysctl.h"
-#include "C:/Keil/EE319Kware/driverlib/uart.h"
-#include "C:/Keil/Labware/utils/uartstdio.h"
-
-#include "C:/Keil/EE319Kware/inc/hw_types.h"
-#include "C:/Keil/EE319Kware/driverlib/debug.h"
-#include "C:/Keil/Labware/driverlib/fpu.h"
-#include "Rom.h"
-
-
-
-//Configure Can controller to receive messages on the specified receive object
-void Prepare_Receiver(uint32 receive_object) {
-	tCANMsgObject sCANMessage;
-	uint8_t pui8MsgData[8];
-
-	//
-	// Initialize a message object to be used for receiving CAN messages with
-	// any CAN ID.  In order to receive any CAN ID, the ID and mask must both
-	// be set to 0, and the ID filter enabled.
-	//
-	sCANMessage.ui32MsgID = 0;
-	sCANMessage.ui32MsgIDMask = 0;
-	sCANMessage.ui32Flags = MSG_OBJ_RX_INT_ENABLE | MSG_OBJ_USE_ID_FILTER;
-	sCANMessage.ui32MsgLen = 8;
-
-	//
-	// Now load the message object into the CAN peripheral.  Once loaded the
-	// CAN will receive any message on the bus, and an interrupt will occur.
-	// Use message object 1 for receiving messages (this is not the same as
-	// the CAN ID which can be any value in this example).
-	//
-	CANMessageSet(CAN0_BASE, receive_object, &sCANMessage, MSG_OBJ_TYPE_RX);
+void Can_Init( const Can_ConfigType* Config )
+{
+	#if (CAN_DEV_ERROR_DETECT == STD_ON)
+		if(NULL_PTR == Config)
+		{
+			Det_ReportError(CAN_MODULE_ID, CAN_INSTANCE_ID,
+							CAN_INIT_SID, CAN_E_PARAM_POINTER);
+		}
+		if(CAN_STATE != CAN_UNINIT)
+		{
+			Det_ReportError(CAN_MODULE_ID, CAN_INSTANCE_ID,
+							CAN_INIT_SID, CAN_E_TRANSITION);
+		}
+		if(CAN_CONTROLLER_STATE != CAN_CS_UNINIT)
+		{
+			Det_ReportError(CAN_MODULE_ID, CAN_INSTANCE_ID,
+							CAN_INIT_SID, CAN_E_TRANSITION);
+		}
+		else
+	#endif
+		{
+			Can_ConfigStructPtr = Config;
+                        
+                        // Tiva code
+                        
+			/* SET STATES TO READY */
+			CAN_STATE = CAN_READY;
+			CAN_CONTROLLER_STATE = CAN_CS_STARTED;
+		}
 }
 
-/**
- * Initialize software and hardware configurations for one CAN controller.
- *
- * @param canx_config			----- CAN controller configuration
- */
-void Can_InitController(Can_ControllerConfigType *canx_config) {
-	
-	// Enable GPIO port
-	SysCtlPeripheralEnable(canx_config->ui32GpioPeripheral);
-	
-	// Configure the GPIO pin muxing to select CAN functions for the pins.
-	GPIOPinConfigure(canx_config->ui32RxPinConfig);
-	GPIOPinConfigure(canx_config->ui32TxPinConfig);
-	
-	// Enable the alternate function on the GPIO pins.
-	GPIOPinTypeCAN(canx_config->ui32Port, canx_config->ui8Pins);
-	
-	// Enable the CAN peripheral.
-	SysCtlPeripheralEnable(canx_config->ui32CanPeripheral);
-	
-	// Initialize the CAN controller.
-	CANInit(canx_config->ui32CanBase);
-	
-	// Set up the bit rate for the CAN bus.
-	CANBitRateSet(canx_config->ui32CanBase, SysCtlClockGet(), canx_config->ui32BitRate);
-	
-	// Enable the CAN for operation.
-	CANEnable(canx_config->ui32CanBase);
-	
-	//Check if the controller wants to receive messages. If so, configure it.
-	if(canx_config->receive_object != -1) {
-		Prepare_Receiver(canx_config->receive_object);
+#if (CAN_VERSION_INFO_API == STD_ON)
+void Can_GetVersionInfo( Std_VersionInfoType* versioninfo )
+{
+#if (CAN_DEV_ERROR_DETECT == STD_ON)
+	/* Check if input pointer is not Null pointer */
+	if(NULL_PTR == versioninfo)
+	{
+		/* Report to DET  */
+		Det_ReportError(CAN_MODULE_ID, CAN_INSTANCE_ID,
+						CAN_GET_VERSION_INFO_SID, CAN_E_PARAM_POINTER);
 	}
-	
+	else
+#endif
+	{
+		/* Copy the vendor Id */
+		versioninfo->vendorID = (uint16)CAN_VENDOR_ID;
+		/* Copy the module Id */
+		versioninfo->moduleID = (uint16)CAN_MODULE_ID;
+		/* Copy Software Major Version */
+		versioninfo->sw_major_version = (uint8)CAN_SW_MAJOR_VERSION;
+		/* Copy Software Minor Version */
+		versioninfo->sw_minor_version = (uint8)CAN_SW_MINOR_VERSION;
+		/* Copy Software Patch Version */
+		versioninfo->sw_patch_version = (uint8)CAN_SW_PATCH_VERSION;
+	}
 }
+#endif
 
-/**
- * Initialize software and hardware configurations for all attached CAN controllers.
- *
- * @param Config			----- CAN driver configuration
- */
-void Can_Init(const Can_ConfigType* Config) {
-	int i=0;
-	for( i=0; i<2; i++) {
-		if(Config->canx_config[i]) {
-			Can_InitController(Config->canx_config[i]);
+
+Can_ReturnType Can_Write( Can_HwHandleType Hth, const Can_PduType* PduInfo )
+{
+#if (CAN_DEV_ERROR_DETECT == STD_ON)
+	if(CAN_STATE == CAN_UNINIT)
+	{
+		/* Report to DET  */
+		Det_ReportError(CAN_MODULE_ID, CAN_INSTANCE_ID,
+						CAN_WRITE_SID, CAN_E_UNINIT);
+		return CAN_NOT_OK;
+	}
+	if(NULL_PTR == PduInfo)
+	{
+		/* Report to DET  */
+		Det_ReportError(CAN_MODULE_ID, CAN_INSTANCE_ID,
+						CAN_WRITE_SID, CAN_E_PARAM_POINTER);
+		return CAN_NOT_OK;
+	}
+	if(Hth != Can_ConfigStructPtr->canHardwareObject[1]->CanObjectId)
+	{
+		/* Report to DET  */
+		Det_ReportError(CAN_MODULE_ID, CAN_INSTANCE_ID,
+						CAN_WRITE_SID, CAN_E_PARAM_HANDLE);
+		return CAN_NOT_OK;
+	}
+	if(PduInfo->length > 8)
+	{
+		/* Report to DET  */
+		Det_ReportError(CAN_MODULE_ID, CAN_INSTANCE_ID,
+						CAN_WRITE_SID, CAN_E_PARAM_DATA_LENGTH);
+		return CAN_NOT_OK;
+	}
+	else
+#endif
+	{
+		if (mutex==1)
+		{
+  			return CAN_BUSY;
+		}
+		else
+		{
+			mutex=1;
+
+			/* START OF CRITICAL SECTION */
+			/* SET ID & DATA 
+			MB31_ID |= ((PduInfo->id)<<18);
+			uint8 sdu_data = *(PduInfo->sdu);
+			MB31_DATA_0 |= (uint32)(sdu_data << 24);
+
+			/* CONFIGURE CS WORD 
+			CLEAR_BIT(MB31_CS,21);					// IDE = 0
+			CLEAR_BIT(MB31_CS,20);					// RTR = 0
+			MB31_CS |= 0x0C000000;					// Activate message buffer (CODE= Transmit)
+			MB31_CS |= ((PduInfo->length)<<16);		// set DLC
+                        */
+                        
+			/* END OF CRITICAL SECTION */
+			mutex=0;
+
+			/* INDICATION OF SUCCESSFUL TRANSMISSION */
+			CanIf_TxConfirmation(PduInfo->swPduHandle);
+			return CAN_OK;
 		}
 	}
-	
 }
 
-/**
- *  Perform polling of TX confirmation, and send confirmation to CanIf
- */
-void Can_MainFunction_Write(void) {
-	while((CANStatusGet(CAN0_BASE, CAN_STS_TXREQUEST) & 1)) {}
-	//Send confirmation to CanIf	
-}
+void CanReceptionInterrupt()
+{
+	/* RECEIVE PROCESS */
 
-/**
- *  Perform polling of RX indication, read the message from RX buffers, and send it to CanIf
- * @param Msg[] 			----- 1 to 8 bytes received message
- * @param SduLength  	----- Message length
- * @param id  				----- Can Id
- * @param hoh 				----- Pin Id
- * @param driverId  	----- Id of driver that received the message
- * @return 						----- result status
- */
-void Can_To_CanIf(uint8_t Msg[], PduLengthType SduLength, uint32_t id , uint16 hoh , uint8 ControllerID) {
-	//uint8_t Msg[] = "from CAN drv to CANIF";
-	const PduInfoType L_PDU = {
-		.SduDataPtr = Msg,
-		.SduLength = SduLength
-	};
+	//while(BIT_IS_SET(CAN_IFLAG1,31));	// buffer31 has successfully completed reception
 	Can_HwType Mailbox;
-	Mailbox.CanId = (uint16)id;
-	Mailbox.Hoh = hoh;
-	Mailbox.ControllerId = ControllerID;
-	CanIf_RxIndication(&Mailbox, &L_PDU);
+	PduInfoType PduInfoPtr;
+        
+	/* READ MB31 CONTENTS 
+	uint8 ControlStatus = (MB31_CS & 0x0F000000) >> 24;			// Read CODE
+	uint8 Data = (MB31_DATA_0 & 0xFF000000) >> 24;				// Read DATA BYTE 0
+	uint16 Id = (MB31_ID & 0x1FFC0000) >> 18;					// Read Standard ID
+	uint8 Length = (MB31_CS & 0x000F0000) >> 16;				// Read DLC
+        */
+        
+	/* ADD PDU INFO */
+	//PduInfoPtr.SduDataPtr = &Data;
+	//PduInfoPtr.SduLength =  Length;
+
+	/* CLEAR MB31 FLAG */
+	//CAN_IFLAG1 |= 0x80000000;
+
+	/* READ TIMER TO UNLOCK MB */
+	//uint32 Timer = CAN_TIMER;
+
+	/* ADD MAILBOX INFO */
+	//Mailbox.CanId = Id;
+	//Mailbox.Hoh = Can_ConfigStructPtr->canHardwareObject[0]->CanObjectId;			// HRH
+	//Mailbox.ControllerId = Can_ConfigStructPtr->canController->CanControllerId;
+
+	/* CALLBACK FUNCTION */
+	//CanLPduReceiveCalloutFunction(&Mailbox, &PduInfoPtr);
+
+	/* SIGNAL THE END OF SERVICING THE INTERRUPT REQUEST */
+	//INTC_EOIR0 = 0x00000000;
 }
 
-/**
- *  Perform polling of RX indication, read the message from RX buffers, and send it to CanIf
+
+/* OUR CAN_CTRL1 TO BE REMOVED IF NOT NEEDED
+ * CAN_CTRL1 |= 0x00F90CA4;
+ * ^^^ Can_Init() ^^^
  */
-void Can_MainFunction_Read(void) {
-	
-	while((CANStatusGet(CAN0_BASE, CAN_STS_NEWDAT) & 1) == 0) {}
 
-	tCANMsgObject sCANMessage;
-	uint8_t pui8MsgData[8];
-	sCANMessage.pui8MsgData = pui8MsgData;
-	
-	//
-	// Read the message from the CAN.  Message object number 1 is used
-	// (which is not the same thing as CAN ID).  The interrupt clearing
-	// flag is not set because this interrupt was already cleared in
-	// the interrupt handler.
-	//
-	CANMessageGet(CAN0_BASE, 1, &sCANMessage, 0);
-
-	//
-	// Check to see if there is an indication that some messages were
-	// lost.
-	//
-	if(sCANMessage.ui32Flags & MSG_OBJ_DATA_LOST)
-	{
-			UARTprintf("CAN message loss detected\n");
-	}
-
-	//
-	// Print out the contents of the message that was received.
-	//
-	UARTprintf("A new message arrived to Can driver!\n");
-	UARTprintf("Msg ID=0x%08X len=%u data=0x",
-						 sCANMessage.ui32MsgID, sCANMessage.ui32MsgLen);
-	unsigned int uIdx;
-	for(uIdx = 0; uIdx < sCANMessage.ui32MsgLen; uIdx++)
-	{
-			UARTprintf("%02X ", pui8MsgData[uIdx]);
-	}
-	UARTprintf("\n");
-	
-	//Send message to CanIf
-	Can_To_CanIf(pui8MsgData, sCANMessage.ui32MsgLen, sCANMessage.ui32MsgID , 
-							 CanConfig.canx_config[0]->pin_id, CanConfig.canx_config[0]->controller_id);
-}
-
-/**
- * Transmit PDU to CAN bus
- *
- * @param hth 				----- hardware transmit handle (HTH)
- * @param pduInfo  		----- PDU (protocol data unit), consists of: CanIf Id, Can Id, data, DLC
- * @return 						----- result status
+/* PINS FOR CAN TX & RX (AS PREVIOUS YEAR)
+ * TX = 42 (PC10)
+ * RX = 43 (PC11)
+ * ^^^ Can_Init() ^^^
  */
-Can_ReturnType Can_Write(Can_HwHandleType hth, Can_PduType *pduInfo) {
-	
-	UARTprintf("Can got a message; hth: %d, CanId: %d, PrivateID: %d, Length: %d, Data: ", 
-							hth, pduInfo->id, pduInfo->swPduHandle, pduInfo->length);
-	int i=0;
-	for(i=0; i<pduInfo->length; i++) {
-		UARTprintf("%02X ", pduInfo->sdu[i]);
-	}
-	UARTprintf("\n");
-	
-	//Get CAN controller's base address
-	uint32 CAN_BASE = Can_Bases[Can_Controllers[hth]];
-	
-	//Build the CAN message
-  tCANMsgObject sCANMessage;
-	sCANMessage.ui32MsgID = pduInfo->id;
-  sCANMessage.ui32MsgIDMask = 0;
-  sCANMessage.ui32MsgLen = pduInfo->length;
-  sCANMessage.pui8MsgData = pduInfo->sdu;
-	
-	// Send the CAN message using object number 1 (not the same thing as CAN ID).
-	// This function will cause the message to be transmitted right away.
-	CANMessageSet(CAN_BASE, 1, &sCANMessage, MSG_OBJ_TYPE_TX);
-	Can_MainFunction_Write();
-	UARTprintf("all is ok\n");
-	return CAN_OK;
-}
+
+/* MCR & CTRL1 WILL BE CHANGED IF WE WENT FOR PLAN B
+ * VALUES ARE IN PBCFG.C FILE
+ * ^^^ Can_Init() ^^^
+ */
+
+/* OUR IMPLEMENTATION IS DIFFERENT IN ORDER THAN PREVIOUS YEAR
+ * IN CRITICAL SECTION
+ * OUR REFERENCE IS DATASHEET PAGE 1789
+ * ^^^ Can_Write() ^^^
+ */

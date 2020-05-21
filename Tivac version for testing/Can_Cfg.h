@@ -1,24 +1,14 @@
-#ifndef CAN_CFG_H
-#define CAN_CFG_H
+#ifndef CAN_CFG_H_INCLUDED
+#define CAN_CFG_H_INCLUDED
 
-#include "Std_Types.h"
+/*******************************************************************************
+ *                      		 CanGeneral                                    *
+ *******************************************************************************/
 
-typedef struct {
-	uint32 ui32GpioPeripheral;
-	uint32 ui32RxPinConfig;
-	uint32 ui32TxPinConfig;
-	uint32 ui32Port;
-	uint8  ui8Pins;
-	uint32 ui32CanPeripheral;
-	uint32 ui32CanBase;
-	uint32 ui32BitRate;
-	uint32 pin_id;
-	uint32 controller_id;
-	uint32 receive_object;
-} Can_ControllerConfigType;
+#define CAN_DEV_ERROR_DETECT 			STD_OFF
+#define CanIndex 						(uint8)0x00		// Specifies the InstanceId of this module instance
+#define CanLPduReceiveCalloutFunction	CanIf_RxIndication		// callout function after reception of L-PDU
+#define CAN_VERSION_INFO_API			STD_ON
 
-typedef struct {
-	Can_ControllerConfigType **canx_config;
-} Can_ConfigType;
 
-#endif
+#endif // CAN_CFG_H_INCLUDED

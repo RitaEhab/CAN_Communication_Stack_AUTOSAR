@@ -1,122 +1,110 @@
-#ifndef CAN_GENERAL_TYPES_H
-#define CAN_GENERAL_TYPES_H
+#ifndef CAN_GENERALTYPES_H_INCLUDED
+#define CAN_GENERALTYPES_H_INCLUDED
 
+#include "Std_Types.h"
+#include "ComStack_Types.h"
 
-#include <stdint.h>
-typedef uint32_t PduIdType;
-
-typedef uint32_t Can_IdType; /* Assuming extended IDs are used, revert to uint16 for standard IDs, 0x Std ID, 1x Ext ID*/
-/* Use uint16 if more than 255 H/W handles otherwise, uint8*/
-
- /* @req CAN429 */
-typedef uint16_t Can_HwHandleType;
-
-typedef enum Can_StateTransitionType {
-	CAN_T_STOP, /* Cannot request mode CAN_UNINIT */
-	CAN_T_START,
-	CAN_T_SLEEP,
-	CAN_T_WAKEUP
-} Can_StateTransitionType;
-
-/** @req 4.0.3/CAN039 */
-typedef enum Can_ReturnType {
-	CAN_OK, /* Successful operation */
-	CAN_NOT_OK, /* Error occurred or wakeup event occurred during sleep transition */
-	CAN_BUSY /* Transmit request not processed because no transmit object was available*/
+typedef enum Can_ReturnType{
+	CAN_OK,
+	CAN_NOT_OK,
+	CAN_BUSY
 } Can_ReturnType;
 
-typedef enum Can_ProcessingType {
-	INTERRUPT,
-	POLLING
-} Can_ProcessingType;
+/* States of a CAN DRIVER */
+typedef enum Can_StateType{
+	CAN_READY,
+	CAN_UNINIT
+} Can_StateType;
 
-typedef enum CanHandleType {
+/* Error states of a CAN controller */
+typedef enum Can_ErrorStateType{
+	CAN_ERRORSTATE_ACTIVE,
+	CAN_ERRORSTATE_PASSIVE,
+	CAN_ERRORSTATE_BUSOFF
+} Can_ErrorStateType;
+
+/* States of a CAN controller */
+typedef enum Can_ControllerStateType {
+	CAN_CS_UNINIT = 0x00,
+	CAN_CS_STARTED = 0x01,
+	CAN_CS_STOPPED = 0x02,
+	CAN_CS_SLEEP = 0x03
+} Can_ControllerStateType;
+
+/* Specifies the type (Full-CAN or Basic-CAN) of a hardware object */
+typedef enum CanHandleType{
 	BASIC,
 	FULL
 } CanHandleType;
 
-typedef struct {
-	uint16_t canObjectId;
-	CanHandleType canHandleType;
-} CanHardwareObject;
+/* Specifies the type of CAN ID */
+typedef enum CanIdType{
+	EXTENDED,
+	MIXED,
+	STANDARD
+} CanIdType;
 
-typedef struct Can_ControllerType {
-	/* @req CAN315 */
-	char CanControllerActivation; ////changed it
+typedef enum CanObjectType{
+	RECEIVE,
+	TRANSMIT
+} CanObjectType;
 
-	/* @req CAN382 */
-	uint32_t CanControllerBaseAddress;
+/*  Represents the Identifier of an L-PDU.
+	The two most significant bits specify the frame type:
+	00 CAN message with Standard CAN ID */
+typedef uint32 Can_IdType;
 
-	/* @req CAN316 */
-	uint8_t CanControllerId;
+/* Represents the hardware object handles of a CAN hardware unit */
+typedef uint16 Can_HwHandleType;
 
-	/* @req CAN314 */
-	Can_ProcessingType CanBusOffProcessing;
-
-	/* @req CAN317 */
-	Can_ProcessingType CanRxProcessing;
-
-	/* @req CAN318 */
-	Can_ProcessingType CanTxProcessing;
-} Can_ControllerType;
-
-typedef struct Can_HardwareObjectType {
-	CanHandleType CanHandleType;
-} Can_HardwareObjectType;
-
-typedef struct Can_ConfigSetType {
-	Can_ControllerType CanController;
-	Can_HardwareObjectType CanHardwareObject;
-} Can_ConfigSetType;
-
-typedef struct Can_HwType {
-	Can_IdType CanId; /* Standard/Extended CAN ID of CAN LPDU */
-	Can_HwHandleType Hoh; /* ID of the corresponding HardwareObject Range */
-	uint8_t ControllerId; /* ControllerId provided by CanIf clearly identify the corresponding controller */
-} Can_HwType;
-
-/** @req 4.0.3/CAN415 */
-typedef struct Can_PduType_s {
-	// private data for CanIf,just save and use for callback
-	PduIdType   swPduHandle;
-	// the CAN ID, 29 or 11-bit
-	Can_IdType 	id;
-	// Length, max 8 bytes
-	uint8_t		length;
-	// data ptr
-	uint8_t 		*sdu;
+/* This type unites PduId (swPduHandle), SduLength (length), SduData (sdu), and CanId (id) for any CAN L-SDU. */
+typedef struct{
+	PduIdType swPduHandle;			// Pdu unique number in CanIf module
+	uint8 length;					// MAX 8 BYTES
+	Can_IdType id;					// MSG ID, 11 bits if STANDARD
+	uint8* sdu;						// POINTER TO DATA
 } Can_PduType;
 
-typedef struct Can_MainFunctionRWPeriodType {
-	float CanMainFunctionPeriod;
-} Can_MainFunctionRWPeriodType;
+/*  This type defines a data structure which clearly provides an Hardware Object Handle
+	including its corresponding CAN Controller and therefore CanDrv as well as the specific CanId. */
+typedef struct{
+	Can_IdType CanId;				// MSG ID, 11 bits if STANDARD
+	Can_HwHandleType Hoh;			// Can Object Id
+	uint8 ControllerId;				// CANIF unique Id
+} Can_HwType;
 
-typedef struct Can_Type {
-	Can_ConfigSetType CanConfigSet;
-} Can_Type;
+typedef struct{
+	uint16 CanControllerBaudRate;				// baudrate of the controller in kbps
+	uint16 CanControllerBaudRateConfigID;		// Uniquely identifies a specific baud rate configuration
+	uint8 CanControllerPropSeg;					// propagation delay in time quantas
+	uint8 CanControllerSeg1;					// phase segment 1 in time quantas
+	uint8 CanControllerSeg2;					// phase segment 2 in time quantas
+	uint8 CanControllerSyncJumpWidth;			// synchronization jump width for the controller in time quantas
+} CanControllerBaudrateConfig;
 
-typedef enum Can_TrcvModeType {
-	CANTRCV_TRCVMODE_NORMAL = 0, /* Transceiver mode NORMAL */
-	CANTRCV_TRCVMODE_STANDBY, /* Transceiver mode STANDBY */
-	CANTRCV_TRCVMODE_SLEEP /* Transceiver mode SLEEP */
-} Can_TrcvModeType;
+typedef struct {
+	uint8 CanControllerId;			// Controller Id in CAN (logical)
+	CanControllerBaudrateConfig *canControllerBaudrateConfig;
+} CanController;
 
-typedef enum Can_TrcvWakeupReasonType {
-	CANTRCV_WU_ERROR = 0, /* This value may only be reported when error was reported to DEM before. Wake-up reason was not detected */
-	CANTRCV_WU_NOT_SUPPORTED, /* The transceiver does not support any information for the wakeup reason. */
-	CANTRCV_WU_BY_BUS, /* Network has caused the wake up of the ECU */
-	CANTRCV_WU_BY_PIN, /* Wake-up event at one of the transceiver's pins (not at the CAN bus). */
-	CANTRCV_WU_INTERNALLY, /* Network has woken the ECU via a request to NORMAL mode */
-	CANTRCV_WU_RESET, /* Wake-up is due to an ECU reset */
-	CANTRCV_WU_POWER_ON /* Wake-up is due to an ECU reset after power on. */
-} Can_TrcvWakeupReasonType;
+typedef struct {
+	uint8 CanHwFilterCode;				// specifies (with the filter mask) the IDs range that passes the hardware filter
+	uint16 CanHwFilterMask;				// Bits holding a 0 mean don't care, i.e. do not compare the message's identifier in the respective bit position
+} CanHwFilter;
 
-typedef enum Can_TrcvWakeupModeType {
-	CANTRCV_WUMODE_ENABLE = 0, /* Wakeup events notifications are enabled on the addressed network. */
-	CANTRCV_WUMODE_DISABLE, /* Wakeup events notifications are disabled on the addressed network. */
-	CANTRCV_WUMODE_CLEAR /* A stored wakeup event is cleared on the addressed network */
-} Can_TrcvWakeupModeType;
+typedef struct {
+	CanHandleType canHandleType;
+	uint16 CanHwObjectCount;
+	CanIdType canIdType;			// OR USE CAN_IDTYPE WHICH INDICATES FULL IDENTIFIER NOT ONLY THE TYPE ?
+	uint8 CanObjectId;					// Holds the handle ID of HRH or HTH
+	CanObjectType canObjectType;
+	CanController *CanControllerRef;
+	CanHwFilter *canHwFilter;
+} CanHardwareObject;
 
+typedef struct {
+	CanController *canController;
+	CanHardwareObject *canHardwareObject[2];
+} Can_ConfigType;
 
-
-#endif /* CAN_GENERAL_TYPES_H */
+#endif // CAN_GENERALTYPES_H_INCLUDED

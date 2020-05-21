@@ -1,34 +1,78 @@
-#include "Can_PBcfg.h"
 #include "Can_Cfg.h"
+#include "Can.h"
 
-#include "Can_PBcfg.h"
-#include "Can_Cfg.h"
-
-#include "C:/Keil/EE319Kware/inc/hw_memmap.h"
-
-
-
-#include "C:/Keil/EE319Kware/driverlib/gpio.h"
-#include "C:/Keil/EE319Kware/driverlib/pin_map.h"
-#include "C:/Keil/EE319Kware/driverlib/sysctl.h"
-
-Can_ControllerConfigType Can0ControllerConfig = {
-	SYSCTL_PERIPH_GPIOB,
-	GPIO_PB4_CAN0RX,
-	GPIO_PB5_CAN0TX,
-	GPIO_PORTB_BASE,
-	GPIO_PIN_4 | GPIO_PIN_5,
-	SYSCTL_PERIPH_CAN0,
-	CAN0_BASE,
-	500000,
-	1,
-	0,
-	1
+CanControllerBaudrateConfig canControllerBaudrateConfig =
+{
+		.CanControllerBaudRate = 500,			// Clock rate = 16MHz
+		.CanControllerBaudRateConfigID = 0,
+		.CanControllerPropSeg = 4,				// 0b100
+		.CanControllerSeg1 = 7,					// 0b111
+		.CanControllerSeg2 = 1,					// 0b001
+		.CanControllerSyncJumpWidth = 3			// 0b11
 };
-const Can_ControllerConfigType *CanControllersConfigs[2] = {&Can0ControllerConfig, 0};
-const Can_ConfigType CanConfig = {CanControllersConfigs};
 
-const uint32 Can_Bases[2] = {CAN0_BASE, CAN1_BASE};
+/*		PREVIOUS YEAR
+ * PRESDIV = 4
+ * RJW = 3
+ * PSEG1 = 3
+ * PSEG2 = 3
+ * PROPSEG = 6
+ * SMP = 1			 3 samples to determine bit value at Rx input
+ * */
 
-//ID of controller based on hth as an index
-const uint32 Can_Controllers[2] = {0, 0};
+/*		OURS
+ * PRESDIV = 0
+ * RJW = 3
+ * PSEG1 = 7
+ * PSEG2 = 1
+ * PROPSEG = 4
+ * SMP = 1			 3 samples to determine bit value at Rx input
+ * */
+CanController canController =
+{
+		.CanControllerId = 0,
+		.canControllerBaudrateConfig = &canControllerBaudrateConfig
+};
+
+Can_HwType ReceiveMailbox = {
+		.CanId = 0x7,
+		.Hoh = 0,				// HRH = 0
+		.ControllerId = 0
+};
+
+CanHwFilter canHwFilter =
+{
+		.CanHwFilterCode = 1,				// TO BE CHANGED
+		.CanHwFilterMask = 0x0001			// TO BE CHANGED
+};
+
+/* Hardware Receive Handle */
+CanHardwareObject canHardwareReceiveObject =
+{
+		.canHandleType = FULL,
+		.CanHwObjectCount = 2,
+		.canIdType = STANDARD,
+		.CanObjectId = 0,			// HRH = 0
+		.canObjectType = RECEIVE,
+		.CanControllerRef = &canController,
+		.canHwFilter = &canHwFilter
+};
+
+/* Hardware Transmit Handle */
+CanHardwareObject canHardwareTransmitObject =
+{
+		.canHandleType = FULL,
+		.CanHwObjectCount = 2,
+		.canIdType = STANDARD,
+		.CanObjectId = 1,			// HTH = 1
+		.canObjectType = TRANSMIT,
+		.CanControllerRef = &canController,
+		.canHwFilter = &canHwFilter
+};
+
+const Can_ConfigType canConfigSet =
+{
+		.canController = &canController,
+		.canHardwareObject[0] = &canHardwareReceiveObject,
+		.canHardwareObject[1] = &canHardwareTransmitObject
+};

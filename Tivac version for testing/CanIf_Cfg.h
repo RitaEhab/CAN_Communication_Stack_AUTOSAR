@@ -1,86 +1,62 @@
 #ifndef CANIF_CFG_H_INCLUDED
 #define CANIF_CFG_H_INCLUDED
 
-/* -------------------------------------------------------------------------- */
-/*                           Macros & Typedefs                                */
-/* -------------------------------------------------------------------------- */
-/** CANIF_INF_RUNTIME_PDU_CONFIGURATION
-    STD_OFF ->  Pre-compile time configuration
-    STD_ON  ->  Post build time configuration
-    m4 mwgodeen
-*/
-#define CAN_IF_ID 2
 
-#define CANIF_INF_RUNTIME_PDU_CONFIGURATION      STD_OFF
-#define CANIF_INF_CAN_TRCV_SUPPORT               STD_ON
+									/* CanIfPrivateCfg CONTAINER */
 
-/** service CanIf_CancelTransmit() shall be pre-compile time
-    configurable On/Off
-*/
-#define CANIF_PUBLIC_CANCEL_TRANSMIT_SUPPORT     STD_ON
-
-/** CanIf_ReadRxPduData(): This API can
-    be enabled or disabled at pre-compile time
-*/
-#define CANIF_PUBLIC_READRXPDU_DATA_API          STD_OFF
-#define CANIF_PUBLIC_READTXPDU_NOTIFY_STATUS_API STD_OFF
-#define CANIF_PUBLIC_READRXPDU_NOTIFY_STATUS_API STD_OFF
-
-#define CANIF_INF_WAKEUP_SUPPORT                         STD_ON
-#define CANIF_PUBLIC_WAKEUP_CHECK_VALIDATION_SUPPORT     STD_ON
-#define CANIF_INF_PUBLIC_TX_CONFIRMATION_POLLING_SUPPORT STD_ON
-#define CANIF_PUBLIC_PN_SUPPORT                  STD_ON
-#define CANIF_SET_BAUDRATE_API                   STD_ON
-#define CANIF_PUBLIC_ICOM_SUPPORT                STD_ON
-
-/** Enables and disables the API for reading the notification
-    status of transmit L-PDUs.
-*/
-#define CANIF_READTXPDU_NOTIFY_STATUS_API        STD_OFF
-#define CANIF_PUBLIC_SETDYNAMICTXID_API          STD_OFF
-
-#define CANIF_INF_PRIVATE_DATA_LENGTH_CHECK      STD_ON
-
-#define CANIF_INF_TX_OFFLINE_ACTIVE_SUPPORT      STD_ON
-
-/** Max number of can driver controllers */
-#define CANIF_INF_CAN_DRIVER_0_CONTROLER_CNT         1
-#define CANIF_INF_CAN_DRIVER_0_CONTROLER_0           0
-
-/** Max number of can tranceiver  driver tranceivers  */
-#define CANIF_INF_CAN_TRCV_DRIVER_0_TRANSCEIVER_CNT  1
-#define CANIF_INF_CAN_TRCV_DRIVER_0_TRANSCEIVER_0    0
-
-//#define CANIF_INF_USE_CAN_NM                    STD_OFF
-//#define CANIF_INF_USE_CAN_TP                    STD_OFF
-//#define CANIF_INF_USE_CAN_TSYN                  STD_OFF
-//#define CANIF_INF_USE_CDD                       STD_OFF
-//#define CANIF_INF_USE_J1939NM                   STD_OFF
-//#define CANIF_INF_USE_J1939TP                   STD_OFF
-//#define CANIF_INF_USE_PDUR                      STD_OFF
-//#define CANIF_INF_USE_XCP                       STD_OFF
-#include "CanIf_Types.h"
-#define CANIF_INF_RX_PDU_0_CAN_ID   1
-#define CANIF_INF_TX_PDU_0_CAN_ID   0
-
-#define CANIF_PDU_ID_CAN_RX_PDUR 1
-#define CANIF_PDU_ID_CANIF_TX_CAN 0
+#define CanIfFixedBuffer 					STD_ON	 // Fixed size of buffer element 8 bytes
+#define CanIfPrivateDataLengthCheck 		STD_ON	 // Data Length Check is supported
+#define CanIfPrivateSoftwareFilterType		BINARY	 // Won't be used when using FULL CAN
+#define CanIfSupportTTCAN					STD_OFF `// TTCAN is not supported
 
 
-/* -------------------------------------------------------------------------- */
-/*                       Structures and Enumerations                          */
-/* -------------------------------------------------------------------------- */
-/*typedef enum {
-	CANIF_INF_RX_PDU_0 = 0,   ///PduR
-	CANIF_INF_RX_CNT = 1
-}CanIf_INF_Rx_Pdus;
-typedef enum {
-	CANIF_INF_TX_PDU_0 = 0,   ///PduR
-	CANIF_INF_TX_CNT = 1
-}CanIf_Rx_Pdus;*/
+									/* CanIfPublicCfg CONTAINER */
 
-/* -------------------------------------------------------------------------- */
-/*                      Global variables  Declarations	                      */
-/* -------------------------------------------------------------------------- */
-extern const CanIf_ConfigType canIf_Config;
+#define CANIF_PUBLIC_DEV_ERROR_DETECT		STD_ON	 // Detection and notification is enabled
+#define CanIfMetaDataSupport				STD_OFF  // Disable support for dynamic ID handling using L-SDU MetaData
+#define	CanIfPublicCancelTransmitSupport 	STD_OFF	 // disable dummy API for upper layer modules which allows to
+													 //	request the cancellation of an I-PDU
+
+#define CanIfPublicHandleTypeEnum			UINT8	 // CAN hardware units equal to or less than 255 HW objects
+#define CanIfPublicIcomSupport				STD_OFF  // Disable support of Pretended Network features in CanIf
+#define CanIfPublicMultipleDrvSupport		STD_OFF  // Disable support for multiple CAN Drivers
+#define CanIfPublicPnSupport				STD_OFF  // Disable support of Partial Network features in CanIf
+#define CanIfPublicReadRxPduDataApi			STD_OFF  // Disables the API CanIf_ReadRxPduData()
+#define CanIfPublicReadRxPduNotifyStatusApi	STD_OFF	 // Disables the API for reading the notification status of
+													 //	receive L-PDUs.
+
+#define CanIfPublicReadTxPduNotifyStatusApi	STD_OFF	 // Disables the API for reading the notification status of
+													 //	transmit L-PDUs.
+
+#define CanIfPublicSetDynamicTxIdApi		STD_OFF  // Disables the API for reconfiguration of the CAN Identifier
+													 //	for each Transmit L-PDU
+
+#define CanIfPublicTxBuffering				STD_OFF  // Disables the buffering of transmit L-PDUs
+#define CanIfPublicTxConfirmPollingSupport	STD_OFF  // Disable the API to poll for Tx
+													 //	Confirmation state
+
+#define CanIfPublicWakeupCheckValidSupport	STD_OFF	 // Disables support for wake up validation
+#define CanIfTriggerTransmitSupport			STD_OFF	 // Disables the CanIf_TriggerTransmit API
+#define CanIfTxOfflineActiveSupport			STD_OFF	 // Disables TxOffLineActive feature
+
+#define CanIfVersionInfoApi					STD_OFF	 // disables the API for reading the version information about
+													 //	the CAN Interface
+
+#define CanIfWakeupSupport					STD_OFF	 // Disables the CanIf_CheckWakeup API
+
+
+							/* CanIfTxPduCfg CONTAINER */
+
+
+#define CanIfTxPduUserTxConfirmationName	PduR_CanIfTxConfirmation
+/*  defines the upper layer (UL) module to which the confirmation of the successfully
+ * transmitted CANTXPDUID has to be routed via the <User_TxConfirmation> */
+#define CanIfTxPduUserTxConfirmationUL		PDUR
+
+
+							/* CanIfRxPduCfg CONTAINER */
+
+#define CanIfRxPduUserRxIndicationName		PduR_CanIfRxIndication
+#define CanIfRxPduUserRxIndicationUL		PDUR
+
 #endif // CANIF_CFG_H_INCLUDED

@@ -1,41 +1,31 @@
-#ifndef COMSTACK_TYPES_H_
-#define COMSTACK_TYPES_H_
+#ifndef COMSTACK_TYPES_H_INCLUDED
+#define COMSTACK_TYPES_H_INCLUDED
 
 #include "Std_Types.h"
 
-typedef uint32_t PduIdType;
-typedef uint16_t PduLengthType;
+/* Maximum number of PDUs (Protocol data unit) used within one software module */
+typedef uint8 PduIdType;
 
-typedef struct {
-  //SDU Payload
-	uint8_t *SduDataPtr;
-  //SDU Length
+/* Maximum payload size of a frame of the underlying communication system */
+typedef uint8 PduLengthType;
+
+/* stores basic info about PDU  */
+typedef struct{
+	uint8* SduDataPtr;
+	uint8* MetaDataPtr;
 	PduLengthType SduLength;
-}PduInfoType;
+} PduInfoType;
 
-typedef enum {
-	BUFREQ_OK=0,
-	BUFREQ_NOT_OK,
-	BUFREQ_BUSY,
-	BUFREQ_OVFL
+/* stores the result of a buffer request */
+typedef enum BufReq_ReturnType {
+	BUFREQ_OK,
+	BUFREQ_E_NOT_OK,
+	BUFREQ_E_BUSY,
+	BUFREQ_E_OVFL
 }BufReq_ReturnType;
 
-typedef enum {
-	TP_DATACONF,
-	TP_DATARETRY,
-	TP_CONFPENDING,
-	TP_NORETRY,
-}TpDataStateType;
 
-typedef struct {
-	TpDataStateType TpDataState;
-	PduLengthType   TxTpDataCnt;
-}RetryInfoType;
+/* stores identifier of a communication channel */
+typedef uint8 NetworkHandleType;
 
-typedef enum {
-    TP_STMIN=0,
-    TP_BS,
-    TP_BC
-}TPParameterType;
-
-#endif
+#endif // COMSTACK_TYPES_H_INCLUDED

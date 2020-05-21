@@ -1,0 +1,6 @@
+#ifndef MEMMAP_H_INCLUDED
+#define MEMMAP_H_INCLUDED
+
+/* EMPTY FILE */
+
+#endif // MEMMAP_H_INCLUDED
