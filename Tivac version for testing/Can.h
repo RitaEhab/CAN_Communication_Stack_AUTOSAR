@@ -49,6 +49,8 @@ void Can_Init( const Can_ConfigType* Config );
 void Can_GetVersionInfo( Std_VersionInfoType* versioninfo );
 #endif
 Can_ReturnType Can_Write( Can_HwHandleType Hth, const Can_PduType* PduInfo );
-void CanReceptionInterrupt();
+void CAN_REG_INIT ();
+void CAN_REG_WRITE (uint8 data);
+//void CanReceptionInterrupt();
 
 #endif // CAN_H_INCLUDED
