@@ -1,11 +1,56 @@
 #include "Can.h"
 #include "Common_Macros.h"
 #include "CanIf_Cbk.h"
+#include "tm4c123gh6pm.h"
 
 STATIC const Can_ConfigType* Can_ConfigStructPtr = NULL_PTR;
 STATIC Can_StateType CAN_STATE = CAN_UNINIT;
 STATIC Can_ControllerStateType CAN_CONTROLLER_STATE = CAN_CS_UNINIT;
 STATIC uint8 mutex =0;
+
+/*
+	CAN0 Pins:
+	CAN0Rx PB4
+	CAN0Tx PB5
+*/
+
+void CAN_REG_INIT ()
+{
+	SYSCTL_RCGC0_R = 0x01000000;		// Enable Can0 clock gating
+	SYSCTL_RCGC2_R = 0x00000002;		// Enable PORTB clock gating
+	GPIO_PORTB_AFSEL_R = 0x00000030;	// Enable pin alternate functions for PB4, PB5
+	GPIO_PORTB_PCTL_R = 0x00880000;		// Configure CAN0 for pins PB4, PB5
+
+	CAN0_CTL_R = 0x00000041;		// Set INIT, CCE bit
+	CAN0_BIT_R = 0;
+	CAN0_BIT_R = 	Can_ConfigStructPtr->canController->canControllerBaudrateConfig->CanControllerSeg2 << 12 |
+			Can_ConfigStructPtr->canController->canControllerBaudrateConfig->CanControllerSeg1 << 8  |
+			Can_ConfigStructPtr->canController->canControllerBaudrateConfig->CanControllerSyncJumpWidth << 6  |
+			Can_ConfigStructPtr->canController->canControllerBaudrateConfig->CanControllerPropSeg;
+	CLEAR_BIT(CAN0_IF1ARB2_R, 15);		// CHECK // Ignore msg object for init MSGVAL = 0
+	
+	/* INITIALIZE MSG OBJECTS */
+	/* Transmit Message Object */
+	CAN0_IF1CMSK_R = 0x00000086;		// Bit6,5,4 = 0 .. Bit2= 1        check
+	CAN0_IF1MSK2_R = 0;          		// Disable filtering for transmission 
+
+	CAN0_IF1ARB2_R = 0x0000A01C;		// ID[12:2] = 7
+	SET_BIT(CAN0_IF1MCTL_R, 7);		// EOB = 1
+	SET_BIT(CAN0_IF1MCTL_R, 3);		// DLC = 8
+
+	SET_BIT(CAN0_IF1ARB2_R, 15);		// MSGVAL = 1
+	CAN0_BRPE_R = 0;			// CHECK // Baud Rate Prescaler Extension
+	CLEAR_BIT(CAN0_CTL_R, 0);		// Clear INIT bit
+}
+
+void CAN_REG_WRITE (uint8 data)
+{
+	CAN0_IF1CMSK_R = 0x00000083;		// WRNRD, DATAA, DATAB = 1
+	CAN0_IF1DA1_R = data;			// Assign data
+	CAN0_IF1CRQ_R = 0x00000001;		// MSG NUM = 1
+	CAN0_IF1MCTL_R = 0x00008100; 		// Set TXRQST, NEWDAT
+}
+
 
 void Can_Init( const Can_ConfigType* Config )
 {
@@ -29,8 +74,7 @@ void Can_Init( const Can_ConfigType* Config )
 	#endif
 		{
 			Can_ConfigStructPtr = Config;
-                        
-                        // Tiva code
+            CAN_REG_INIT ();
                         
 			/* SET STATES TO READY */
 			CAN_STATE = CAN_READY;
@@ -110,11 +154,15 @@ Can_ReturnType Can_Write( Can_HwHandleType Hth, const Can_PduType* PduInfo )
 			mutex=1;
 
 			/* START OF CRITICAL SECTION */
+			uint8 DATA = *(PduInfo->sdu);
+			uint8 DLC = PduInfo->length;
+			uint16 ID = PduInfo->id;
+
+			CAN_REG_WRITE(DATA);
 			/* SET ID & DATA 
 			MB31_ID |= ((PduInfo->id)<<18);
 			uint8 sdu_data = *(PduInfo->sdu);
 			MB31_DATA_0 |= (uint32)(sdu_data << 24);
-
 			/* CONFIGURE CS WORD 
 			CLEAR_BIT(MB31_CS,21);					// IDE = 0
 			CLEAR_BIT(MB31_CS,20);					// RTR = 0
@@ -132,13 +180,13 @@ Can_ReturnType Can_Write( Can_HwHandleType Hth, const Can_PduType* PduInfo )
 	}
 }
 
-void CanReceptionInterrupt()
-{
+//void CanReceptionInterrupt()
+//{
 	/* RECEIVE PROCESS */
 
 	//while(BIT_IS_SET(CAN_IFLAG1,31));	// buffer31 has successfully completed reception
-	Can_HwType Mailbox;
-	PduInfoType PduInfoPtr;
+	//Can_HwType Mailbox;
+	//PduInfoType PduInfoPtr;
         
 	/* READ MB31 CONTENTS 
 	uint8 ControlStatus = (MB31_CS & 0x0F000000) >> 24;			// Read CODE
@@ -167,7 +215,7 @@ void CanReceptionInterrupt()
 
 	/* SIGNAL THE END OF SERVICING THE INTERRUPT REQUEST */
 	//INTC_EOIR0 = 0x00000000;
-}
+//}
 
 
 /* OUR CAN_CTRL1 TO BE REMOVED IF NOT NEEDED
